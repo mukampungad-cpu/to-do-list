@@ -1,23 +1,65 @@
-import { useState } from "react"
 
-export default function TaskForm({onAdd}) {
-    const [title, setTitle] = useState('')
+import { useState } from 'react'
 
-    function handleSubmit(e) {
-        e.preventDefault()
-        const clean = title.trim()
-        if (!clean) return
-        onAdd(clean)
-        setTitle('')
+export default function TaskForm({ onAdd }) {
+  const [title, setTitle] = useState('')
+  const [priority, setPriority] = useState('medium')
+  const [message, setMessage] = useState('')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+
+    const cleanTitle = title.trim()
+
+    if (!cleanTitle) {
+      setMessage('Please enter a task title.')
+      return
     }
 
-    return (
+    onAdd(cleanTitle, priority)
 
-        <form onSubmit={handleSubmit}>
-            <label htmlFor="new-task" className="visually-hidden">New Task</label>
-            <input id="new-task" value={title} placeholder="What needs to be done?" onChange={(e) => setTitle(e.target.value)}></input>
-            <button type="submit">Add</button>
-        </form>
+    setTitle('')
+    setPriority('medium')
+    setMessage('Task added successfully!')
+  }
 
-    )
+  return (
+    <div className="task-form-container">
+      <form onSubmit={handleSubmit} className="task-form">
+        <label htmlFor="new-task">New task</label>
+
+        <input
+          id="new-task"
+          type="text"
+          value={title}
+          placeholder="What needs to be done?"
+          onChange={(e) => {
+            setTitle(e.target.value)
+            setMessage('')
+          }}
+          maxLength={100}
+        />
+
+        <label htmlFor="priority">Priority</label>
+
+        <select
+          id="priority"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+
+        <button type="submit">Add Task</button>
+      </form>
+
+      {message && (
+        <p className="form-message" role="status">
+          {message}
+        </p>
+      )}
+    </div>
+  )
 }

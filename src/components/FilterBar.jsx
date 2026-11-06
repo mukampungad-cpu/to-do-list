@@ -1,13 +1,24 @@
-export default function FilterBar({filter, onChange}) {
-    const FILTERS = ['all', 'active', 'done']
-    return (
-        <div role="group" aria-label="Filter Tasks" className="filters">
-            {FILTERS.map((f) => {
-            <button key={f} type="button" aria-pressed={filter === f} onClick={() => onChange(f)}>
-          {f[0].toUpperCase() + f.slice(1)}
-        </button>
 
-            })}
-        </div>
-    )
+export default function FilterBar({ filter, onChange }) {
+  const filters = [
+    { label: 'All Tasks', value: 'all' },
+    { label: 'Pending', value: 'active' },
+    { label: 'Completed', value: 'completed' }
+  ]
+
+  return (
+    <div className="filter-bar" aria-label="Filter tasks">
+      {filters.map((item) => (
+        <button
+          key={item.value}
+          type="button"
+          className={filter === item.value ? 'active-filter' : ''}
+          onClick={() => onChange(item.value)}
+          aria-pressed={filter === item.value}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
 }

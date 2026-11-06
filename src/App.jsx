@@ -1,50 +1,178 @@
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
+
 import FilterBar from './components/FilterBar'
 import TaskForm from './components/TaskForm'
 import TaskList from './components/TaskList'
 
 function App() {
+  // Load tasks from LocalStorage
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const savedTasks = localStorage.getItem('my-todo-tasks')
+      return savedTasks ? JSON.parse(savedTasks) : []
+    } catch {
+      return []
+    }
+  })
 
-  const [tasks, setTasks] = useState([])
   const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
-  const addTask = (title) => 
-    setTasks((prevTasks) => [...prevTasks, { id: crypto.randomUUID(), title, done: false }])
+  // Save tasks whenever they change
+  useEffect(() => {
+    localStorage.setItem('my-todo-tasks', JSON.stringify(tasks))
+  }, [tasks])
 
-  const toggleTask = (id) =>
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  // Add a new task
+  const addTask = (title, priority) => {
+    const newTask = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      done: false,
+      priority: priority,
+      createdAt: new Date().toISOString()
+    }
 
-  const deleteTask = (id) => setTasks((prev) => prev.filter((t) => t.id !== id));
+    setTasks((prevTasks) => [...prevTasks, newTask])
+  }
 
-  const clearCompleted = () => setTasks((prev) => prev.filter((t) => !t.done));
+  // Complete or uncomplete a task
+  const toggleTask = (id) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id
+          ? { ...task, done: !task.done }
+          : task
+      )
+    )
+  }
 
-  const visible = tasks.filter((t) =>
-    filter === "active" ? !t.done : filter === "completed" ? t.done : true
-  );
+  // Delete a task
+  const deleteTask = (id) => {
+    setTasks((prevTasks) =>
+      prevTasks.filter((task) => task.id !== id)
+    )
+  }
 
-  const remaining = tasks.filter((t) => !t.done).length;
+  // Edit a task
+  const editTask = (id, newTitle) => {
+    const cleanTitle = newTitle.trim()
 
+    if (!cleanTitle) return
+
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id
+          ? { ...task, title: cleanTitle }
+          : task
+      )
+    )
+  }
+
+  // Clear completed tasks
+  const clearCompleted = () => {
+    setTasks((prevTasks) =>
+      prevTasks.filter((task) => !task.done)
+    )
+  }
+
+  // Filter and search tasks
+  const visibleTasks = tasks.filter((task) => {
+    const matchesFilter =
+      filter === 'active'
+        ? !task.done
+        : filter === 'completed'
+          ? task.done
+          : true
+
+    const matchesSearch = task.title
+      .toLowerCase()
+      .includes(search.toLowerCase())
+
+    return matchesFilter && matchesSearch
+  })
+
+  // Task statistics
+  const totalTasks = tasks.length
+  const completedTasks = tasks.filter(
+    (task) => task.done
+  ).length
+
+  const remainingTasks = totalTasks - completedTasks
 
   return (
-    <>
-      <main>
-        <h1>My Task</h1>
+    <main className="todo-container">
+
+      <header className="todo-header">
+        <h1>My Task Manager</h1>
+        <p>Organize your day, one task at a time.</p>
+      </header>
+
+      <section className="todo-content">
+
+        <div className="todo-stats">
+          <div>
+            <h3>{totalTasks}</h3>
+            <p>Total Tasks</p>
+          </div>
+
+          <div>
+            <h3>{completedTasks}</h3>
+            <p>Completed</p>
+          </div>
+
+          <div>
+            <h3>{remainingTasks}</h3>
+            <p>Pending</p>
+          </div>
+        </div>
+
         <TaskForm onAdd={addTask} />
-        <FilterBar filter={filter} onChange={setFilter} />
-        <TaskList tasks={visible} onToggle={toggleTask} onDelete={deleteTask} />
 
+        <div className="search-container">
+          <input
+            type="search"
+            placeholder="Search your tasks..."
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+            aria-label="Search tasks"
+          />
+        </div>
 
-         <footer className="todo-footer">
-        <p role="status">{remaining} task{remaining === 1 ? "" : "s"} left</p>
-        {tasks.some((t) => t.done) && (
-          <button type="button" onClick={clearCompleted}>Clear completed</button>
-        )}
-      </footer>
+        <FilterBar
+          filter={filter}
+          onChange={setFilter}
+        />
 
-      </main>
-    </>
+        <TaskList
+          tasks={visibleTasks}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
+          onEdit={editTask}
+        />
+
+        <footer className="todo-footer">
+          <p role="status">
+            {remainingTasks} task
+            {remainingTasks === 1 ? '' : 's'} left
+          </p>
+
+          {completedTasks > 0 && (
+            <button
+              type="button"
+              onClick={clearCompleted}
+            >
+              Clear completed
+            </button>
+          )}
+        </footer>
+
+      </section>
+    </main>
   )
 }
 
